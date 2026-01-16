@@ -66,7 +66,6 @@ then open http://localhost:5000
 ## Dataset
 
 using XSUM dataset from HuggingFace (EdinburghNLP/xsum)
-- 204k train, 11.3k validation, 11.3k test samples
 
 ```python
 from datasets import load_dataset
