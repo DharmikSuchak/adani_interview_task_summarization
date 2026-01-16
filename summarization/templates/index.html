@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Summarization - BART</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <h1 class="text-3xl font-bold text-center mb-2">Text Summarization</h1>
+        <p class="text-gray-600 text-center mb-6">Using BART for abstractive summarization | Dataset: EdinburghNLP/xsum</p>
+
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <textarea id="inputText" class="w-full p-3 border rounded-lg mb-4" rows="8" placeholder="Paste your article here..."></textarea>
+            
+            <div class="flex gap-4 mb-4">
+                <div class="flex-1">
+                    <label class="text-sm text-gray-600">Min Length</label>
+                    <input type="number" id="minLength" value="30" class="w-full p-2 border rounded">
+                </div>
+                <div class="flex-1">
+                    <label class="text-sm text-gray-600">Max Length</label>
+                    <input type="number" id="maxLength" value="150" class="w-full p-2 border rounded">
+                </div>
+            </div>
+
+            <button onclick="summarize()" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                Summarize
+            </button>
+
+            <div id="loading" class="hidden text-center py-4">
+                <div class="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
+                <p class="mt-2 text-gray-600">Generating summary...</p>
+            </div>
+
+            <div id="result" class="hidden mt-4">
+                <h3 class="font-semibold mb-2">Summary:</h3>
+                <div id="summary" class="p-3 bg-gray-50 rounded-lg border"></div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="font-semibold mb-3">Sample Articles (XSUM Dataset)</h2>
+            <div id="samples" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <script>
+        let samples = [];
+        
+        async function loadSamples() {
+            const res = await fetch('/api/sample_articles');
+            const data = await res.json();
+            samples = data.articles;
+            document.getElementById('samples').innerHTML = samples.map((s, i) => 
+                `<div class="p-3 border rounded cursor-pointer hover:bg-gray-50" onclick="useSample(${i})">
+                    <p class="text-sm text-gray-700">${s.document.substring(0, 120)}...</p>
+                </div>`
+            ).join('');
+        }
+
+        function useSample(i) {
+            document.getElementById('inputText').value = samples[i].document;
+        }
+
+        async function summarize() {
+            const text = document.getElementById('inputText').value.trim();
+            if (!text) return alert('Please enter text');
+            
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('result').classList.add('hidden');
+            
+            try {
+                const res = await fetch('/summarize', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        text,
+                        min_length: +document.getElementById('minLength').value,
+                        max_length: +document.getElementById('maxLength').value
+                    })
+                });
+                const data = await res.json();
+                document.getElementById('summary').textContent = data.summary;
+                document.getElementById('result').classList.remove('hidden');
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+            document.getElementById('loading').classList.add('hidden');
+        }
+
+        loadSamples();
+    </script>
+</body>
+</html>
